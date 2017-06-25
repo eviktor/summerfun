@@ -87,17 +87,17 @@ namespace imageconverter
 
         private void button2_Click(object sender, EventArgs e)
         {
+            Stream myStream = null;
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filter = "Text files | *.txt";
             dialog.Multiselect = false;
+            dialog.RestoreDirectory = true;
 
             if(dialog.ShowDialog() == DialogResult.OK)
             {
-                string path = dialog.FileName;
-                using (StreamReader reader = new StreamReader(new FileStream(path, FileMode.Open), new UTF8Encoding()))
-                {
-                    
-                }
+                StreamReader sr = new StreamReader(dialog.FileName);
+                MessageBox.Show(sr.ReadToEnd());
+                sr.Close();
             }
         }
     }
