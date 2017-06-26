@@ -6,6 +6,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +20,6 @@ namespace imageconverter
         {
             InitializeComponent();
         }
-
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
             string text = richTextBox1.Text;
@@ -87,18 +87,55 @@ namespace imageconverter
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Stream myStream = null;
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Text files | *.txt";
-            dialog.Multiselect = false;
-            dialog.RestoreDirectory = true;
+            string secretKey = GenerateKey();
 
-            if(dialog.ShowDialog() == DialogResult.OK)
-            {
-                StreamReader sr = new StreamReader(dialog.FileName);
-                MessageBox.Show(sr.ReadToEnd());
-                sr.Close();
-            }
+            GCHandle gch = GCHandle.Alloc(secretKey, GCHandleType.Pinned); 
+
+            EncryptFile(@"C:\Users\evikt\Desktop\test.txt", @"C:\Users\evikt\Desktop\enc.txt", secretKey);
+            DecryptFile(@"C:\Users\evikt\Desktop\enc.txt", @"C:\Users\evikt\Desktop\dec.txt", secretKey);
+
+        }
+        static string GenerateKey()
+        {
+            DESCryptoServiceProvider desCrypto = (DESCryptoServiceProvider)DESCryptoServiceProvider.Create();
+            return ASCIIEncoding.ASCII.GetString(desCrypto.Key);
+        }
+
+        static void EncryptFile(string inputFile, string outputFile, string key)
+        {
+            FileStream fsInput = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+            FileStream fsEncrypted = new FileStream(outputFile, FileMode.Create, FileAccess.Write);
+
+            DESCryptoServiceProvider DES = new DESCryptoServiceProvider();
+            DES.Key = Encoding.ASCII.GetBytes(key);
+            DES.IV = Encoding.ASCII.GetBytes(key);
+
+            ICryptoTransform desencrypt = DES.CreateEncryptor();
+            CryptoStream cryptostream = new CryptoStream(fsEncrypted, desencrypt, CryptoStreamMode.Write);
+
+            byte[] bytearrayinput = new byte[fsInput.Length];
+            fsInput.Read(bytearrayinput, 0, bytearrayinput.Length);
+            cryptostream.Write(bytearrayinput, 0, bytearrayinput.Length);
+            cryptostream.Close();
+            fsInput.Close();
+            fsEncrypted.Close();
+        }
+
+        static void DecryptFile(string inputFile, string outputFile, string key)
+        {
+            DESCryptoServiceProvider DES = new DESCryptoServiceProvider();
+            DES.Key = ASCIIEncoding.ASCII.GetBytes(key);
+            DES.IV = ASCIIEncoding.ASCII.GetBytes(key);
+
+            FileStream fsread = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+
+            ICryptoTransform desdecrypt = DES.CreateDecryptor();
+            CryptoStream cryptostreamDecr = new CryptoStream(fsread, desdecrypt, CryptoStreamMode.Read);
+
+            StreamWriter fsDecrypted = new StreamWriter(outputFile);
+            fsDecrypted.Write(new StreamReader(cryptostreamDecr).ReadToEnd());
+            fsDecrypted.Flush();
+            fsDecrypted.Close();
         }
     }
 }
