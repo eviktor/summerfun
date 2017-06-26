@@ -87,22 +87,59 @@ namespace imageconverter
 
         private void button2_Click(object sender, EventArgs e)
         {
-            string secretKey = GenerateKey();
 
-            GCHandle gch = GCHandle.Alloc(secretKey, GCHandleType.Pinned); 
-
-            EncryptFile(@"C:\Users\evikt\Desktop\test.txt", @"C:\Users\evikt\Desktop\enc.txt", secretKey);
-            DecryptFile(@"C:\Users\evikt\Desktop\enc.txt", @"C:\Users\evikt\Desktop\dec.txt", secretKey);
-
+            GetFile();
+            //GenerateFileName(file);
+            //EncryptFile(@"C:\Users\evikt\Desktop\test.txt", @"C:\Users\evikt\Desktop\enc.txt", secretKey);
+            //DecryptFile(@"C:\Users\evikt\Desktop\enc.txt", @"C:\Users\evikt\Desktop\dec.txt", secretKey);
         }
+
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            string file = GetFile();
+            GenerateFileName(file);
+        }
+
+
+        public string GetFile()
+        {
+            string file = null;
+            DialogResult result = openFileDialog1.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                file = openFileDialog1.FileName;
+            }
+            else
+            {
+                MessageBox.Show("Error");
+            }
+            label5.Text = file;
+            return file;
+        }
+
+
+        static void GenerateFileName(string file)
+        {
+            string fileNamn = file;
+            string path = @"C:\Users\evikt\Desktop";
+            string fileName = Path.GetRandomFileName() + "Encrypted.txt";
+
+            string secretKey = GenerateKey();
+            GCHandle gch = GCHandle.Alloc(secretKey, GCHandleType.Pinned);
+            path = Path.Combine(path, fileName);
+
+            EncryptFile(file, path, secretKey);
+        }
+
         static string GenerateKey()
         {
             DESCryptoServiceProvider desCrypto = (DESCryptoServiceProvider)DESCryptoServiceProvider.Create();
             return ASCIIEncoding.ASCII.GetString(desCrypto.Key);
         }
 
-        static void EncryptFile(string inputFile, string outputFile, string key)
+        public static void EncryptFile(string inputFile, string outputFile, string key)
         {
+
             FileStream fsInput = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
             FileStream fsEncrypted = new FileStream(outputFile, FileMode.Create, FileAccess.Write);
 
@@ -137,5 +174,7 @@ namespace imageconverter
             fsDecrypted.Flush();
             fsDecrypted.Close();
         }
+
+
     }
 }
